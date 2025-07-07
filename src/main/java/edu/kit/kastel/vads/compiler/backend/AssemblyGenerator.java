@@ -31,9 +31,7 @@ public class AssemblyGenerator {
         } else {
             builder.append(String.format("%s:\n", instructionSet.name()));
         }
-        if (maxStackVariables > 0) {
-            builder.append(String.format("subq $%d, %%rsp\n", maxStackVariables * 8));
-        }
+        allocateStack(maxStackVariables);
         for (Block block : instructionSet.getBlocks()) {
             addLabel(block);
             for (Instruction instruction : instructionSet.getInstructions(block)) {
@@ -254,10 +252,11 @@ public class AssemblyGenerator {
         builder.append(String.format("call %s\n", call.functionName()));
 
         // pop parameters
-        for (int i = 0; i < call.numParameters(); i++) {
+        deallocateStack(call.numParameters());
+        /*for (int i = 0; i < call.numParameters(); i++) {
             Register parameter = call.getParameter(registerMapping, i);
             pop(parameter);
-        }
+        }*/
 
         // move return value to destination
         move(PhysicalRegister.Return, destination);
@@ -295,10 +294,22 @@ public class AssemblyGenerator {
     private void addReturnInstruction(ReturnInstruction returnInstruction) {
         Register returnRegister = returnInstruction.getReturnRegister(registerMapping);
         if (returnRegister != PhysicalRegister.Return) move(returnRegister, PhysicalRegister.Return);
-        if (maxStackVariables > 0) {
-            builder.append(String.format("addq $%d, %%rsp\n", maxStackVariables * 8));
-        }
+        deallocateStack(maxStackVariables);
         builder.append("ret\n");
+    }
+
+
+
+    private void allocateStack(int numVars) {
+        if (numVars == 0) return;
+        builder.append(String.format("subq $%d, %%rsp\n", numVars * 8));
+        stackOffset += numVars;
+    }
+
+    private void deallocateStack(int numVars) {
+        if (numVars == 0) return;
+        builder.append(String.format("addq $%d, %%rsp\n", numVars * 8));
+        stackOffset -= numVars;
     }
 
 
@@ -439,6 +450,9 @@ public class AssemblyGenerator {
     }
 
     private String addrOf(VirtualRegister virtualRegister, int bytes) {
-        return String.format("%d(%%rsp)", (virtualRegister.id() + stackOffset) * 8);
+        return String.format(
+            "%d(%%rsp)", 
+            (virtualRegister.id() + stackOffset - maxStackVariables) * 8
+        );
     }
 }
