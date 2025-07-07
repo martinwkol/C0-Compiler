@@ -50,16 +50,6 @@ public enum PhysicalRegister implements Register {
     }
 
     @Override
-    public String registerName() {
-        return "%" + name4bytes;
-    }
-
-    @Override
-    public String registerName1Byte() {
-        return "%" + name1byte;
-    }
-
-    @Override
     public String toString() {
         return "%" + name4bytes;
     }

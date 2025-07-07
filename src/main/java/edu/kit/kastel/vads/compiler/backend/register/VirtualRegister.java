@@ -16,15 +16,5 @@ public record VirtualRegister(int id) implements Register {
     public int hashCode() {
         return this.id ^ this.getClass().hashCode();
     }
-
-    @Override
-    public String registerName() {
-        return String.format("%d(%%rsp)", this.id * 8);
-    }
-
-    @Override
-    public String registerName1Byte() {
-        return String.format("%d(%%rsp)", this.id * 8);
-    }
-
+    
 }

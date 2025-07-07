@@ -146,8 +146,8 @@ public class AssemblyGenerator {
             String.format(
                 "%s %s, %s\n",
                 assemblyInstructionName,
-                right.registerName(),
-                physical(destination).registerName()
+                addrOf(right),
+                addrOf(physical(destination))
             )
         );
         moveToStackIfVirtual(destination);
@@ -160,21 +160,21 @@ public class AssemblyGenerator {
         if (left instanceof VirtualRegister && right instanceof VirtualRegister) {
             // cmp first second computes second - first => first = right, second = left
             move(right, PhysicalRegister.Temp);
-            builder.append(String.format("cmp %s, %s\n", PhysicalRegister.Temp.registerName(), left.registerName()));
+            builder.append(String.format("cmp %s, %s\n", addrOf(PhysicalRegister.Temp), addrOf(left)));
         }
         else {
             // cmp first second computes second - first => first = right, second = left
-            builder.append(String.format("cmp %s, %s\n", right.registerName(), left.registerName()));
+            builder.append(String.format("cmp %s, %s\n", addrOf(right), addrOf(left)));
         }
         String labelTrue = String.format(".C%dT", comparisonLabelCounter);
         String labelEnd = String.format(".C%dE", comparisonLabelCounter);
         comparisonLabelCounter++;
 
         builder.append(String.format("%s %s\n", jumpInstruction, labelTrue));
-        builder.append(String.format("movl $%d, %s\n", 0, destination.registerName()));
+        builder.append(String.format("movl $%d, %s\n", 0, addrOf(destination)));
         builder.append(String.format("jmp %s\n", labelEnd));
         builder.append(String.format("%s:\n", labelTrue));
-        builder.append(String.format("movl $%d, %s\n", 1, destination.registerName()));
+        builder.append(String.format("movl $%d, %s\n", 1, addrOf(destination)));
         builder.append(String.format("%s:\n", labelEnd));
     }
 
@@ -183,8 +183,8 @@ public class AssemblyGenerator {
         builder.append(String.format(
                 "%s %s, %s\n",
                 shiftAsmInstruction,
-                PhysicalRegister.ShiftRegister.registerName1Byte(),
-                destination.registerName()
+                addrOf(PhysicalRegister.ShiftRegister),
+                addrOf(destination)
         ));
     }
 
@@ -215,13 +215,13 @@ public class AssemblyGenerator {
 
     private void addJumpZero(JumpZeroInstruction jump) {
         Register destination = jump.register(registerMapping);
-        builder.append(String.format("cmp $%d, %s\n", 0, destination.registerName()));
+        builder.append(String.format("cmp $%d, %s\n", 0, addrOf(destination)));
         builder.append(String.format("jz %s\n", jump.target().label()));
     }
 
     private void addJumpNonZero(JumpNonZeroInstruction jump) {
         Register destination = jump.register(registerMapping);
-        builder.append(String.format("cmp $%d, %s\n", 0, destination.registerName()));
+        builder.append(String.format("cmp $%d, %s\n", 0, addrOf(destination)));
         builder.append(String.format("jnz %s\n", jump.target().label()));
     }
 
@@ -243,7 +243,7 @@ public class AssemblyGenerator {
     private void addConstInt(ConstIntInstruction constIntInstruction) {
         Register destination = constIntInstruction.getDestination(registerMapping);
         assignTempIfVirtual(destination);
-        builder.append(String.format("movl $%d, %s\n", constIntInstruction.getValue(), physical(destination).registerName()));
+        builder.append(String.format("movl $%d, %s\n", constIntInstruction.getValue(), addrOf(physical(destination))));
         moveToStackIfVirtual(destination);
     }
 
@@ -251,7 +251,7 @@ public class AssemblyGenerator {
         Register destination = constBool.getDestination(registerMapping);
         assignTempIfVirtual(destination);
         int num = constBool.getValue() ? 1 : 0;
-        builder.append(String.format("movl $%d, %s\n", num, physical(destination).registerName()));
+        builder.append(String.format("movl $%d, %s\n", num, addrOf(physical(destination))));
         moveToStackIfVirtual(destination);
     }
 
@@ -310,9 +310,48 @@ public class AssemblyGenerator {
         builder.append(
             String.format(
                 "movl %s, %s\n",
-                from.registerName(),
-                to.registerName()
+                addrOf(from),
+                addrOf(to)
             )
         );
+    }
+
+    private String addrOf(Register register) {
+        return addrOf(register, 4);
+    }
+
+    private String addrOf(PhysicalRegister register) {
+        return addrOf(register, 4);
+    }
+
+    private String addrOf(VirtualRegister register) {
+        return addrOf(register, 4);
+    }
+
+    private String addrOf(Register register, int bytes) {
+        if (register instanceof PhysicalRegister physicalRegister) {
+            return addrOf(physicalRegister, bytes);
+        } else if (register instanceof VirtualRegister virtualRegister) {
+            return addrOf(virtualRegister, bytes);
+        } else {
+            throw new IllegalArgumentException("Register must be physical register or virtual register");
+        }
+    }
+
+    private String addrOf(PhysicalRegister physicalRegister, int bytes) {
+        return switch (bytes) {
+            case 1 -> "%" + physicalRegister.name1byte;
+            case 2 -> "%" + physicalRegister.name2bytes;
+            case 4 -> "%" + physicalRegister.name4bytes;
+            case 8 -> "%" + physicalRegister.name8bytes;
+            default -> throw new IllegalArgumentException(String.format(
+                "%d is an invalid size", 
+                bytes
+            ));
+        };
+    }
+
+    private String addrOf(VirtualRegister virtualRegister, int bytes) {
+        return String.format("%d(%%rsp)", virtualRegister.id() * 8);
     }
 }
