@@ -59,7 +59,7 @@ public class SemanticAnalysis {
 
         // check function definitions
         this.program.accept(
-                new RecursivePostorderVisitor<>(new FunctionDefinitionAnalysis()), 
+                new FunctionDefinitionAnalysis(), 
                 functionTypeNamespace
         );
 
