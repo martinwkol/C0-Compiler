@@ -40,13 +40,16 @@ public class Parser {
         Identifier identifier = this.tokenSource.expectIdentifier();
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
         List<ParameterTree> parameters = new ArrayList<>();
-        while (this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)) {
+        boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
+        while (moreParameters) {
             parameters.add(parseParameter());
+            if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
+            else moreParameters = false;
         }
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
         BlockTree body = parseBlock();
         return new FunctionTree(
-            new TypeTree(BasicType.INT, returnType.span()),
+            new TypeTree(basicType(returnType), returnType.span()),
             name(identifier),
             parameters,
             body
@@ -106,11 +109,7 @@ public class Parser {
     private ParameterTree parseParameter() {
         Keyword keyword = this.tokenSource.expectKeyword(KeywordType.INT, KeywordType.BOOL);
         Identifier ident = this.tokenSource.expectIdentifier();
-        BasicType basicType = switch (keyword.type()) {
-            case KeywordType.INT -> BasicType.INT;
-            case KeywordType.BOOL -> BasicType.BOOL;
-            default -> throw new ParseException("Keyword " + keyword.type() + " does not represent a type");
-        };
+        BasicType basicType = basicType(keyword);
         return new ParameterTree(new TypeTree(basicType, keyword.span()), name(ident));
     }
 
@@ -122,11 +121,7 @@ public class Parser {
             this.tokenSource.expectOperator(OperatorType.ASSIGN);
             expr = parseExpression();
         }
-        BasicType basicType = switch (keyword.type()) {
-            case KeywordType.INT -> BasicType.INT;
-            case KeywordType.BOOL -> BasicType.BOOL;
-            default -> throw new ParseException("Keyword " + keyword.type() + " does not represent a type");
-        };
+        BasicType basicType = basicType(keyword);
         return new DeclarationTree(new TypeTree(basicType, keyword.span()), name(ident), expr);
     }
 
@@ -361,13 +356,13 @@ public class Parser {
                 
                 this.tokenSource.consume();
                 List<ExpressionTree> parameters = new ArrayList<>();
-                boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.BRACE_CLOSE);
+                boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
                 while (moreParameters) {
                     parameters.add(parseExpression());
                     if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
                     else moreParameters = false;
                 }
-                Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.BRACE_CLOSE);
+                Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
                 yield new CallTree(identExpr, parameters, closingBracket.span().end());
             }
             case NumberLiteral(String value, int base, Span span) -> {
@@ -385,5 +380,13 @@ public class Parser {
 
     private static NameTree name(Identifier ident) {
         return new NameTree(Name.forIdentifier(ident), ident.span());
+    }
+
+    private BasicType basicType(Keyword keyword) {
+        return switch (keyword.type()) {
+            case KeywordType.INT -> BasicType.INT;
+            case KeywordType.BOOL -> BasicType.BOOL;
+            default -> throw new ParseException("Keyword " + keyword.type() + " does not represent a type");
+        };
     }
 }
