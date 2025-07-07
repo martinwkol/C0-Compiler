@@ -14,6 +14,7 @@ public class AssemblyGenerator {
     private RegisterMapping registerMapping;
     private @Nullable VirtualRegister storedInTemp;
     private int maxStackVariables;
+    private int stackOffset;
 
     public AssemblyGenerator() {
         addStarterCode();
@@ -24,6 +25,7 @@ public class AssemblyGenerator {
         this.registerMapping = registerMapping;
         this.storedInTemp = null;
         this.maxStackVariables = maxStackVariables;
+        this.stackOffset = 0;
         if (instructionSet.name() == "main") {
             builder.append(".main:\n");
         } else {
@@ -90,6 +92,8 @@ public class AssemblyGenerator {
             case BiggerEqInstruction biggerEq           -> addComparison(biggerEq, "jge");
             case LogNegationInstruction logNegation     -> addLogNegation(logNegation);
 
+            case CallInstruction call                   -> addCall(call);
+
             case ConstIntInstruction constInt           -> addConstInt(constInt);
             case ConstBoolInstruction constBool         -> addConstBool(constBool);
 
@@ -106,23 +110,13 @@ public class AssemblyGenerator {
     private void addMove(MoveInstruction moveInstruction) {
         Register destination = moveInstruction.getDestination(registerMapping);
         Register source = moveInstruction.getSource(registerMapping);
-        if (source instanceof VirtualRegister && destination instanceof VirtualRegister) {
-            move(source, PhysicalRegister.Temp);
-            move(PhysicalRegister.Temp, destination);
-        } else {
-            move(source, destination);
-        }
+        vmove(source, destination);
     }
 
     private void addParameter(ParameterInstruction parameter) {
         Register destination = parameter.getDestination(registerMapping);
         Register source = new VirtualRegister(this.maxStackVariables + 1 + parameter.index()); // + 1 for return address
-        if (destination instanceof VirtualRegister) {
-            move(source, PhysicalRegister.Temp);
-            move(PhysicalRegister.Temp, destination);
-        } else {
-            move(source, destination);
-        }
+        vmove(source, destination);
     }
 
     private void addBinary(BinaryOperationInstruction binOp, String assemblyInstructionName, boolean commutative) {
@@ -239,6 +233,46 @@ public class AssemblyGenerator {
 
 
 
+    private void addCall(CallInstruction call) {
+        Register destination = call.getReturnRegister(registerMapping);
+
+        // save registers
+        for (int i = PhysicalRegister.FreelyUsable.length - 1; i >= 0; i--) {
+            PhysicalRegister register = PhysicalRegister.FreelyUsable[i];
+            if (call.isLive(register) && !register.equals(destination)) {
+                push(register);
+            }
+        }
+
+        // push parameters
+        for (int i = call.numParameters() - 1; i >= 0; i--) {
+            Register parameter = call.getParameter(registerMapping, i);
+            push(parameter);
+        }
+
+        // call
+        builder.append(String.format("call %s\n", call.functionName()));
+
+        // pop parameters
+        for (int i = 0; i < call.numParameters(); i++) {
+            Register parameter = call.getParameter(registerMapping, i);
+            pop(parameter);
+        }
+
+        // move return value to destination
+        move(PhysicalRegister.Return, destination);
+
+        // Restore registers
+        for (int i = 0; i < PhysicalRegister.FreelyUsable.length; i++) {
+            PhysicalRegister register = PhysicalRegister.FreelyUsable[i];
+            if (call.isLive(register) && !register.equals(destination)) {
+                pop(register);
+            }
+        }
+    }
+
+
+
 
     private void addConstInt(ConstIntInstruction constIntInstruction) {
         Register destination = constIntInstruction.getDestination(registerMapping);
@@ -268,6 +302,48 @@ public class AssemblyGenerator {
     }
 
 
+
+    private void push(Register register) {
+        if (register instanceof PhysicalRegister physicalRegister) {
+            push(physicalRegister);
+        } else if (register instanceof VirtualRegister virtualRegister) {
+            push(virtualRegister);
+        } else {
+            new IllegalArgumentException("Register must be physical register or virtual register");
+        }
+    }
+
+    private void push(PhysicalRegister physicalRegister) {
+        builder.append(String.format("pushq %s\n", addrOf(physicalRegister)));
+        stackOffset++;
+    }
+
+    private void push(VirtualRegister virtualRegister) {
+        move(virtualRegister, PhysicalRegister.Temp);
+        push(PhysicalRegister.Temp);
+    }
+
+
+
+    private void pop(Register register) {
+        if (register instanceof PhysicalRegister physicalRegister) {
+            pop(physicalRegister);
+        } else if (register instanceof VirtualRegister virtualRegister) {
+            pop(virtualRegister);
+        } else {
+            new IllegalArgumentException("Register must be physical register or virtual register");
+        }
+    }
+
+    private void pop(PhysicalRegister physicalRegister) {
+        builder.append(String.format("popq %s\n", addrOf(physicalRegister)));
+        stackOffset--;
+    }
+
+    private void pop(VirtualRegister virtualRegister) {
+        pop(PhysicalRegister.Temp);
+        move(PhysicalRegister.Temp, virtualRegister);
+    }
 
 
 
@@ -300,6 +376,17 @@ public class AssemblyGenerator {
         move(PhysicalRegister.Temp, register);
         storedInTemp = null;
         return true;
+    }
+
+    
+
+    private void vmove(Register from, Register to) {
+        if (from instanceof VirtualRegister && to instanceof VirtualRegister) {
+            move(from, PhysicalRegister.Temp);
+            move(PhysicalRegister.Temp, to);
+        } else {
+            move(from, to);
+        }
     }
 
     private void move(Register from, Register to) {
@@ -352,6 +439,6 @@ public class AssemblyGenerator {
     }
 
     private String addrOf(VirtualRegister virtualRegister, int bytes) {
-        return String.format("%d(%%rsp)", virtualRegister.id() * 8);
+        return String.format("%d(%%rsp)", (virtualRegister.id() + stackOffset) * 8);
     }
 }
