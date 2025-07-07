@@ -58,6 +58,9 @@ public class RecursiveVisitor<T, R> implements Visitor<T, R> {
         R r = this.preorderVisitor.visit(functionTree, data);
         r = functionTree.returnType().accept(this, accumulate(data, r));
         r = functionTree.name().accept(this, accumulate(data, r));
+        for (ParameterTree parameter : functionTree.parameters()) {
+            r = parameter.accept(this, accumulate(data, r));
+        }
         r = functionTree.body().accept(this, accumulate(data, r));
         r = this.postorderVisitor.visit(functionTree, accumulate(data, r));
         return r;
