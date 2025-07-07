@@ -27,7 +27,7 @@ public class AssemblyGenerator {
         this.maxStackVariables = maxStackVariables;
         this.stackOffset = 0;
         if (instructionSet.name().equals("main")) {
-            builder.append(".main:\n");
+            builder.append("main.impl:\n");
         } else {
             builder.append(String.format("%s:\n", instructionSet.name()));
         }
@@ -46,14 +46,15 @@ public class AssemblyGenerator {
     }
 
     private void addStarterCode() {
-        builder.append(".global main\n" +
-                ".global .main\n" +
+        builder.append(
+                ".global main\n" +
                 ".text\n" +
                 "main:\n" +
-                "call .main\n" +
+                "call main.impl\n" +
                 "movq %rax, %rdi\n" +
                 "movq $0x3C, %rax\n" +
-                "syscall\n");
+                "syscall\n"
+        );
     }
 
     private void addLabel(Block block) {
@@ -158,8 +159,8 @@ public class AssemblyGenerator {
             // cmp first second computes second - first => first = right, second = left
             builder.append(String.format("cmp %s, %s\n", addrOf(right), addrOf(left)));
         }
-        String labelTrue = String.format(".C%dT", comparisonLabelCounter);
-        String labelEnd = String.format(".C%dE", comparisonLabelCounter);
+        String labelTrue = String.format("%s.C%dT", instructionSet.name(), comparisonLabelCounter);
+        String labelEnd = String.format("%s.C%dE", instructionSet.name(), comparisonLabelCounter);
         comparisonLabelCounter++;
 
         builder.append(String.format("%s %s\n", jumpInstruction, labelTrue));
@@ -321,7 +322,7 @@ public class AssemblyGenerator {
     }
 
     private void push(PhysicalRegister physicalRegister) {
-        builder.append(String.format("pushq %s\n", addrOf(physicalRegister)));
+        builder.append(String.format("pushq %s\n", addrOf(physicalRegister, 8)));
         stackOffset++;
     }
 
@@ -343,7 +344,7 @@ public class AssemblyGenerator {
     }
 
     private void pop(PhysicalRegister physicalRegister) {
-        builder.append(String.format("popq %s\n", addrOf(physicalRegister)));
+        builder.append(String.format("popq %s\n", addrOf(physicalRegister, 8)));
         stackOffset--;
     }
 
