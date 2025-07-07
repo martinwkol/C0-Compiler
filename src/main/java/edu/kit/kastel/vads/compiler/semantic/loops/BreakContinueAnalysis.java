@@ -1,10 +1,11 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.loops;
 
 import edu.kit.kastel.vads.compiler.parser.ast.*;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
+import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 
-public class BreakContinueAnalysis {
+class BreakContinueAnalysis {
     static class Counter {
         public int count = 0;
     }
