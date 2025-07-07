@@ -342,7 +342,8 @@ public class FunctionInstructionSet {
     private void newCall(CallNode callNode) {
         instructions.get(callNode.block()).add(new CallInstruction(
             callNode.functionName(),
-            callNode.parameters().stream().map(node -> (Register) registerAllocator.get(node)).toList()
+            callNode.parameters().stream().map(node -> (Register) registerAllocator.get(node)).toList(),
+            registerAllocator.get(callNode)
         ));
     }
 

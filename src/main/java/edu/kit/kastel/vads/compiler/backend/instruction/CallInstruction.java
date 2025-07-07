@@ -11,7 +11,7 @@ public final class CallInstruction extends Instruction {
     private final List<Register> parameters;
     private final Register returnRegister;
 
-    public CallInstruction(String functionName, List<Register> parameters) {
+    public CallInstruction(String functionName, List<Register> parameters, Register returnRegister) {
         super(true);
         addDefines(PhysicalRegister.Return);
         for (Register parameter : parameters) {
@@ -19,6 +19,7 @@ public final class CallInstruction extends Instruction {
         }
         this.functionName = functionName;
         this.parameters = parameters;
+        this.returnRegister = returnRegister;
     }
 
     public String functionName() {
