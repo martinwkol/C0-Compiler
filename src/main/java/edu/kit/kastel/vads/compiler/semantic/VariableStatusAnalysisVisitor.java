@@ -182,6 +182,7 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     public VariableStatus visit(ParameterTree parameterTree, VariableStatus data) {
         checkUndeclared(parameterTree.name(), data);
         data.declared.add(parameterTree.name().name());
+        data.initialized.add(parameterTree.name().name());
         return data;
     }
 
