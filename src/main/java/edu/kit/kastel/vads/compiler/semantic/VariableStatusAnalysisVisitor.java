@@ -3,6 +3,7 @@ package edu.kit.kastel.vads.compiler.semantic;
 import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.parser.ast.*;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
+import edu.kit.kastel.vads.compiler.semantic.util.VariableStatus;
 
 /// Checks that variables are
 /// - declared before assignment

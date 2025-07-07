@@ -1,11 +1,13 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.functions;
 
 import edu.kit.kastel.vads.compiler.parser.ast.CallTree;
 import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
+import edu.kit.kastel.vads.compiler.semantic.SemanticException;
+import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
 
-public class CallAnalysis implements NoOpVisitor<Namespace<Void>> {
+class CallAnalysis implements NoOpVisitor<Namespace<Void>> {
     private final Namespace<FunctionType> functionTypeNamespace;
 
     public CallAnalysis(Namespace<FunctionType> functionTypeNamespace) {

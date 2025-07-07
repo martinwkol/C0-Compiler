@@ -11,6 +11,7 @@ import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.type.Type;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
+import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
 
 ///  Checks type correctness
 public class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {

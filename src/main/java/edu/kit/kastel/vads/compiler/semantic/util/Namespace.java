@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.util;
 
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
 import org.jspecify.annotations.Nullable;

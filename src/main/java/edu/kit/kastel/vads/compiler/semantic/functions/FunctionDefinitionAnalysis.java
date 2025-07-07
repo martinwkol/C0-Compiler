@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.functions;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,8 +9,10 @@ import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.type.Type;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
+import edu.kit.kastel.vads.compiler.semantic.SemanticException;
+import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
 
-public class FunctionDefinitionAnalysis implements NoOpVisitor<Namespace<FunctionType>> {
+class FunctionDefinitionAnalysis implements NoOpVisitor<Namespace<FunctionType>> {
     @Override
     public Unit visit(ProgramTree programTree, Namespace<FunctionType> data) {
         for (FunctionTree function : programTree.topLevelTrees()) {
