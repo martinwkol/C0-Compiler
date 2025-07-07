@@ -26,10 +26,10 @@ public class AssemblyGenerator {
         this.storedInTemp = null;
         this.maxStackVariables = maxStackVariables;
         this.stackOffset = 0;
-        if (instructionSet.name() == "main") {
+        if (instructionSet.name().equals("main")) {
             builder.append(".main:\n");
         } else {
-            builder.append(String.format("s:\n", instructionSet.name()));
+            builder.append(String.format("%s:\n", instructionSet.name()));
         }
         if (maxStackVariables > 0) {
             builder.append(String.format("subq $%d, %%rsp\n", maxStackVariables * 8));
