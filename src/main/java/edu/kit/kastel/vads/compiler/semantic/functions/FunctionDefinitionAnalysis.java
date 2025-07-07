@@ -9,8 +9,8 @@ import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.type.Type;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
-import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
 
 class FunctionDefinitionAnalysis implements NoOpVisitor<Namespace<FunctionType>> {
     @Override

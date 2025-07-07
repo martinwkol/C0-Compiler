@@ -8,8 +8,8 @@ import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.type.BasicType;
 import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.visitor.RecursivePostorderVisitor;
-import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
 
 import static java.util.Map.entry;  
 

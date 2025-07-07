@@ -1,11 +1,12 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.general;
 
 import edu.kit.kastel.vads.compiler.parser.ast.IntLiteralTree;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
 import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
 
-public class IntegerLiteralRangeAnalysis implements NoOpVisitor<Namespace<Void>> {
+class IntegerLiteralRangeAnalysis implements NoOpVisitor<Namespace<Void>> {
 
     @Override
     public Unit visit(IntLiteralTree intLiteralTree, Namespace<Void> data) {

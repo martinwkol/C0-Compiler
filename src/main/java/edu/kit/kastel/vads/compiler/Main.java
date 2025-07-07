@@ -16,7 +16,8 @@ import edu.kit.kastel.vads.compiler.parser.TokenSource;
 import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis;
-import edu.kit.kastel.vads.compiler.semantic.SemanticException;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ public class Main {
         Path assembly = Path.of(args[1] + ".s");
         ProgramTree program = lexAndParse(input);
         try {
-            new SemanticAnalysis(program).analyze();
+            SemanticAnalysis.analyze(program);
         } catch (SemanticException e) {
             e.printStackTrace();
             System.exit(7);

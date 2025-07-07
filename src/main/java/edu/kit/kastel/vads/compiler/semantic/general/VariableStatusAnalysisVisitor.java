@@ -1,8 +1,9 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.general;
 
 import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.parser.ast.*;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
 import edu.kit.kastel.vads.compiler.semantic.util.VariableStatus;
 
 /// Checks that variables are

@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.semantic;
+package edu.kit.kastel.vads.compiler.semantic.general;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,9 +12,10 @@ import edu.kit.kastel.vads.compiler.parser.type.Type;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
 import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
+import edu.kit.kastel.vads.compiler.semantic.util.SemanticException;
 
 ///  Checks type correctness
-public class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
+class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
     public static class TypeMapping {
         private final Map<ExpressionTree, Type> expressionTypeMap = new HashMap<>();
         private final Map<Name, Type> nameTypeMap = new HashMap<>();

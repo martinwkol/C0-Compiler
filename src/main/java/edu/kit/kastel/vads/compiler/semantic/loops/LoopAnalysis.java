@@ -8,7 +8,7 @@ import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
 public class LoopAnalysis {
     private final ProgramTree program;
 
-    public static void analyse(ProgramTree program) {
+    public static void analyze(ProgramTree program) {
         LoopAnalysis la = new LoopAnalysis(program);
         la.checkBreakContinue();
         la.checkForLoopStep();
