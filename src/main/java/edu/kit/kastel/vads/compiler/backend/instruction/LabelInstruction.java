@@ -8,7 +8,7 @@ public final class LabelInstruction extends Instruction {
         this.label = label;
     }
 
-    public String label() {
-        return this.label;
+    public String label(String functionName) {
+        return "." + functionName + "-" + this.label;
     }
 }

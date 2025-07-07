@@ -60,7 +60,7 @@ public class AssemblyGenerator {
         if (!(instructionSet.getInstruction(block, 0) instanceof LabelInstruction label)) {
             throw new RuntimeException("First instruction of block was not a label");
         }
-        builder.append(String.format("%s:\n", label.label()));
+        builder.append(String.format("%s:\n", label.label(instructionSet.name())));
     }
 
     private void generateForInstruction(Instruction instruction) {
@@ -202,19 +202,19 @@ public class AssemblyGenerator {
     }
 
     private void addJump(JumpInstruction jump) {
-        builder.append(String.format("jmp %s\n", jump.target().label()));
+        builder.append(String.format("jmp %s\n", jump.target().label(instructionSet.name())));
     }
 
     private void addJumpZero(JumpZeroInstruction jump) {
         Register destination = jump.register(registerMapping);
         builder.append(String.format("cmp $%d, %s\n", 0, addrOf(destination)));
-        builder.append(String.format("jz %s\n", jump.target().label()));
+        builder.append(String.format("jz %s\n", jump.target().label(instructionSet.name())));
     }
 
     private void addJumpNonZero(JumpNonZeroInstruction jump) {
         Register destination = jump.register(registerMapping);
         builder.append(String.format("cmp $%d, %s\n", 0, addrOf(destination)));
-        builder.append(String.format("jnz %s\n", jump.target().label()));
+        builder.append(String.format("jnz %s\n", jump.target().label(instructionSet.name())));
     }
 
     private void addCtld() {
@@ -253,10 +253,6 @@ public class AssemblyGenerator {
 
         // pop parameters
         deallocateStack(call.numParameters());
-        /*for (int i = 0; i < call.numParameters(); i++) {
-            Register parameter = call.getParameter(registerMapping, i);
-            pop(parameter);
-        }*/
 
         // move return value to destination
         move(PhysicalRegister.Return, destination);

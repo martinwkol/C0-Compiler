@@ -48,8 +48,8 @@ public class FunctionInstructionSet {
         return instructions.get(block);
     }
 
-    public String getLabel(Block block) {
-        return ((LabelInstruction) instructions.get(block).getFirst()).label();
+    public String getLabel(String functionName, Block block) {
+        return ((LabelInstruction) instructions.get(block).getFirst()).label(functionName);
     }
 
     public void deduceLiveness() {
@@ -238,7 +238,7 @@ public class FunctionInstructionSet {
     private void newBlock(Block block, Set<Node> visited) {
         blocks.add(block);
         instructions.put(block, new ArrayList<>());
-        instructions.get(block).add(new LabelInstruction(".block" + blocks.size()));
+        instructions.get(block).add(new LabelInstruction("block" + blocks.size()));
         // maybe unnecessary
         if (block.exitNode() != null) scanBlocksRecursive(block.exitNode(), visited);
     }
