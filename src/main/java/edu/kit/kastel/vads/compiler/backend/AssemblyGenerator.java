@@ -193,20 +193,20 @@ public class AssemblyGenerator {
         Register source = bitNegation.getSource(registerMapping);
 
         if (destination == source) {
-            builder.append(String.format("not %s\n", destination));
+            builder.append(String.format("not %s\n", addrOf(destination)));
             return;
         }
         if (destination instanceof VirtualRegister) {
             assignTempIfVirtual(destination);
         }
         move(source, physical(destination));
-        builder.append(String.format("not %s\n", physical(destination)));
+        builder.append(String.format("not %s\n", addrOf(physical(destination))));
         moveToStackIfVirtual(destination);
     }
 
     private void addLogNegation(LogNegationInstruction logNegation) {
         Register destination = logNegation.getDestination(registerMapping);
-        builder.append(String.format("subl $%d, %s\n", 1, destination));
+        builder.append(String.format("subl $%d, %s\n", 1, addrOf(destination)));
     }
 
     private void addJump(JumpInstruction jump) {
@@ -232,7 +232,7 @@ public class AssemblyGenerator {
     private void addDivMod(DivModInstruction dm) {
         Register divisor = dm.getDivisor(registerMapping);
         moveToTempIfVirtual(divisor);
-        builder.append(String.format("idivl %s\n", physical(divisor)));
+        builder.append(String.format("idivl %s\n", addrOf(physical(divisor))));
         discardTemp();
     }
 

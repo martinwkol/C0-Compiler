@@ -16,5 +16,5 @@ public record VirtualRegister(int id) implements Register {
     public int hashCode() {
         return this.id ^ this.getClass().hashCode();
     }
-    
+
 }
