@@ -208,7 +208,8 @@ class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
 
     @Override
     public Unit visit(ReturnTree returnTree, TypeMapping data) {
-        if (data.get(returnTree.expression()) != BasicType.INT) {
+        Type returnType = data.get(returnTree.expression());
+        if (returnType != BasicType.INT && returnType != BasicType.BOOL) {
             throw new SemanticException(data.get(returnTree.expression()) + " is an invalid return type");
         }
         return NoOpVisitor.super.visit(returnTree, data);
