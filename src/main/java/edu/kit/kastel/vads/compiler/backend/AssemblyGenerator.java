@@ -46,6 +46,13 @@ public class AssemblyGenerator {
     }
 
     private void addStarterCode() {
+        addHeader();
+        addPrint();
+        addRead();
+        addFlush();
+    }
+
+    private void addHeader() {
         builder.append(
                 ".global main\n" +
                 ".text\n" +
@@ -53,9 +60,59 @@ public class AssemblyGenerator {
                 "call main.impl\n" +
                 "movq %rax, %rdi\n" +
                 "movq $0x3C, %rax\n" +
-                "syscall\n"
+                "syscall\n" +
+                "\n"
         );
     }
+
+    private void addPrint() {
+        builder.append(
+                "print:\n" +
+                "mov 8(%rsp), %rax\n" +
+                "push %rbp\n" +
+                "push %rax\n" +
+                "mov $1, %rax\n" + // SYS_write = 1
+                "mov $1, %rdi\n" + // stdout = 1
+                "lea (%rsp), %rsi\n" + // address for out buffer
+                "mov $1, %rdx\n" + // buffer size
+                "syscall\n" +
+                "pop %rax\n" +
+                "xor %rax, %rax\n" +
+                "pop %rbp\n" +
+                "ret\n\n"
+        );
+    }
+
+    private void addRead() {
+        builder.append(
+                "read:\n" +
+                "push %rbp\n" +
+                "sub $8, %rsp\n" + // reserve space
+                "mov $0, %rax\n" + // SYS_read = 0
+                "mov $0, %rdi\n" + // stdin = 0
+                "lea (%rsp), %rsi\n" + // address for in char buffer
+                "mov $1, %rdx\n" + // buffer size
+                "syscall\n" +
+                "cmp $-1, %rax\n" +
+                "je read.exit\n" +
+                "mov 0(%rsp), %rax\n" +
+                "read.exit:\n" +
+                "add $8, %rsp\n" +
+                "pop %rbp\n" +
+                "ret\n\n"
+        );
+    }
+
+    private void addFlush() {
+        builder.append(
+            "flush:\n" +
+            "xor %rax, %rax\n" +
+            "ret\n\n"
+        );
+    }
+
+    
+
 
     private void addLabel(Block block) {
         if (!(instructionSet.getInstruction(block, 0) instanceof LabelInstruction label)) {
