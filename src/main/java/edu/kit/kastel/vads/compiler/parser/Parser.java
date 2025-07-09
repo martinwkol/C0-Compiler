@@ -17,6 +17,8 @@ import edu.kit.kastel.vads.compiler.parser.type.BasicType;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
+
 public class Parser {
     private final TokenSource tokenSource;
 
@@ -106,14 +108,9 @@ public class Parser {
     }
 
     private StatementTree parseSimpleStatement() {
-        if (
-            this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)
-        ) return parseDeclaration();
-        if (
-            this.tokenSource.hasMore(1) && 
-            this.tokenSource.peek(0).isIdentifier() && 
-            this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)
-        ) return parseCall();
+        if (this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)) return parseDeclaration();
+        if (isIdentCall()) return parseIdentCall();
+        if (isKeywordCall()) return parseKeywordCall();
         return parseAssignment();
     }
 
@@ -136,8 +133,32 @@ public class Parser {
         return new AssignmentTree(lValue, assignmentOperator, expression);
     }
 
-    private CallTree parseCall() {
-        Identifier functionName = this.tokenSource.expectIdentifier();
+    private boolean isIdentCall() {
+        if (!this.tokenSource.hasMore(1)) return false;
+        if (!this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)) return false;
+        if (this.tokenSource.peek(0).isIdentifier()) return true;
+        return false;
+    }
+
+    private boolean isKeywordCall() {
+        if (!this.tokenSource.hasMore(1)) return false;
+        if (!this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)) return false;
+        if (this.tokenSource.peek(0).isIdentifier()) return true;
+        
+        if (!(this.tokenSource.peek() instanceof Keyword keyword)) return false;
+        if (keyword.isKeyword(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH)) return true;
+        return false;
+    }
+
+    private CallTree parseIdentCall() {
+        return parseCall(name(this.tokenSource.expectIdentifier()));
+    }
+
+    private CallTree parseKeywordCall() {
+        return parseCall(name(this.tokenSource.expectKeyword(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH)));
+    }
+
+    private CallTree parseCall(NameTree name) {
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
         List<ExpressionTree> parameters = new ArrayList<>();
         boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
@@ -148,7 +169,7 @@ public class Parser {
         }
         Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
         return new CallTree(
-            new IdentExpressionTree(name(functionName)), 
+            new IdentExpressionTree(name), 
             parameters, 
             closingBracket.span().end()
         );
@@ -372,10 +393,7 @@ public class Parser {
                 yield new UnaryOperatorTree(parseFactor(), type, span);
             }
             case Identifier ident -> {
-                if (
-                    this.tokenSource.hasMore(1) &&
-                    this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)
-                ) yield parseCall();
+                if (isIdentCall()) yield parseIdentCall();
                 this.tokenSource.consume();
                 IdentExpressionTree identExpr = new IdentExpressionTree(name(ident));
                 yield identExpr;
@@ -389,12 +407,20 @@ public class Parser {
                 this.tokenSource.consume();
                 yield new BoolLiteralTree(type == KeywordType.TRUE, span);
             }
+            case Keyword(KeywordType type, Span _) when
+                    type == KeywordType.PRINT || type == KeywordType.READ || type == KeywordType.FLUSH -> {
+                yield parseKeywordCall();
+            }
             case Token t -> throw new ParseException("invalid factor " + t);
         };
     }
 
     private static NameTree name(Identifier ident) {
         return new NameTree(Name.forIdentifier(ident), ident.span());
+    }
+
+    private static NameTree name(Keyword keyword) {
+        return new NameTree(Name.forKeyword(keyword), keyword.span());
     }
 
     private BasicType basicType(Keyword keyword) {
