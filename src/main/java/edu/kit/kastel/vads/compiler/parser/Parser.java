@@ -99,13 +99,13 @@ public class Parser {
 
         // Declaration and simple statements
         if (statement == null) {
-            statement = parseDecSimple();
+            statement = parseSimpleStatement();
         }
         this.tokenSource.expectSeparator(SeparatorType.SEMICOLON);
         return statement;
     }
 
-    private StatementTree parseDecSimple() {
+    private StatementTree parseSimpleStatement() {
         if (
             this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)
         ) return parseDeclaration();
@@ -210,7 +210,7 @@ public class Parser {
 
         StatementTree initializer = null;
         if (!this.tokenSource.peek().isSeparator(SeparatorType.SEMICOLON)) {
-            initializer = parseDecSimple();
+            initializer = parseSimpleStatement();
         }
         this.tokenSource.expectSeparator(SeparatorType.SEMICOLON);
 
@@ -219,7 +219,7 @@ public class Parser {
 
         StatementTree step = null;
         if (!this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE)) {
-            step = parseDecSimple();
+            step = parseSimpleStatement();
         }
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
 
