@@ -56,6 +56,13 @@ public class Parser {
         );
     }
 
+    private ParameterTree parseParameter() {
+        Keyword keyword = this.tokenSource.expectKeyword(KeywordType.INT, KeywordType.BOOL);
+        Identifier ident = this.tokenSource.expectIdentifier();
+        BasicType basicType = basicType(keyword);
+        return new ParameterTree(new TypeTree(basicType, keyword.span()), name(ident));
+    }
+
     private BlockTree parseBlock() {
         Separator bodyOpen = this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN);
         List<StatementTree> statements = new ArrayList<>();
@@ -99,18 +106,15 @@ public class Parser {
     }
 
     private StatementTree parseDecSimple() {
-        if (this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)) {
-            return parseDeclaration();
-        } else {
-            return parseSimple();
-        }
-    }
-
-    private ParameterTree parseParameter() {
-        Keyword keyword = this.tokenSource.expectKeyword(KeywordType.INT, KeywordType.BOOL);
-        Identifier ident = this.tokenSource.expectIdentifier();
-        BasicType basicType = basicType(keyword);
-        return new ParameterTree(new TypeTree(basicType, keyword.span()), name(ident));
+        if (
+            this.tokenSource.peek().isKeyword(KeywordType.INT, KeywordType.BOOL)
+        ) return parseDeclaration();
+        if (
+            this.tokenSource.hasMore(1) && 
+            this.tokenSource.peek(0).isIdentifier() && 
+            this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)
+        ) return parseCall();
+        return parseAssignment();
     }
 
     private StatementTree parseDeclaration() {
@@ -125,11 +129,29 @@ public class Parser {
         return new DeclarationTree(new TypeTree(basicType, keyword.span()), name(ident), expr);
     }
 
-    private StatementTree parseSimple() {
+    private StatementTree parseAssignment() {
         LValueTree lValue = parseLValue();
         Operator assignmentOperator = parseAssignmentOperator();
         ExpressionTree expression = parseExpression();
         return new AssignmentTree(lValue, assignmentOperator, expression);
+    }
+
+    private CallTree parseCall() {
+        Identifier functionName = this.tokenSource.expectIdentifier();
+        this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
+        List<ExpressionTree> parameters = new ArrayList<>();
+        boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
+        while (moreParameters) {
+            parameters.add(parseExpression());
+            if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
+            else moreParameters = false;
+        }
+        Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
+        return new CallTree(
+            new IdentExpressionTree(name(functionName)), 
+            parameters, 
+            closingBracket.span().end()
+        );
     }
 
     private Operator parseAssignmentOperator() {
@@ -350,13 +372,13 @@ public class Parser {
                 yield new UnaryOperatorTree(parseFactor(), type, span);
             }
             case Identifier ident -> {
+                if (
+                    this.tokenSource.hasMore(1) &&
+                    this.tokenSource.peek(1).isSeparator(SeparatorType.PAREN_OPEN)
+                ) yield parseCall();
                 this.tokenSource.consume();
                 IdentExpressionTree identExpr = new IdentExpressionTree(name(ident));
-                if (this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) {
-                    yield parseCall(identExpr);
-                } else {
-                    yield identExpr;
-                }
+                yield identExpr;
             }
             case NumberLiteral(String value, int base, Span span) -> {
                 this.tokenSource.consume();
@@ -369,19 +391,6 @@ public class Parser {
             }
             case Token t -> throw new ParseException("invalid factor " + t);
         };
-    }
-
-    private ExpressionTree parseCall(IdentExpressionTree name) {
-        this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
-        List<ExpressionTree> parameters = new ArrayList<>();
-        boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
-        while (moreParameters) {
-            parameters.add(parseExpression());
-            if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
-            else moreParameters = false;
-        }
-        Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
-        return new CallTree(name, parameters, closingBracket.span().end());
     }
 
     private static NameTree name(Identifier ident) {
