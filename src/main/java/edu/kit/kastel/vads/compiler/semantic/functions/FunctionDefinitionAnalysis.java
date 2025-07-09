@@ -23,7 +23,7 @@ class FunctionDefinitionAnalysis implements NoOpVisitor<Namespace<FunctionType>>
     
     @Override
     public Unit visit(FunctionTree functionTree, Namespace<FunctionType> data) {
-        if (data.get(functionTree.name()) != null) {
+        if (data.contains(functionTree.name())) {
             throw new SemanticException("function " + functionTree.name().name() + " already defined");
         }
         List<Type> parameterTypes = functionTree.parameters().stream().map(param -> param.type().type()).collect(Collectors.toList());

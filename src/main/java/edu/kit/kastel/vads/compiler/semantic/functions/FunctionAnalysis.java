@@ -21,8 +21,8 @@ public class FunctionAnalysis {
         FunctionAnalysis fa = new FunctionAnalysis(program);
         fa.initBuiltin();
         fa.checkDefinitions();
-        fa.checkReturns();
         fa.checkCalls();
+        fa.checkReturns();
         fa.checkMainFunction();
         return fa.namespace;
     }
@@ -51,15 +51,18 @@ public class FunctionAnalysis {
         );
     }
 
+    private void checkCalls() {
+        this.program.accept(
+            new RecursivePostorderVisitor<>(new CallAnalysis(namespace)), 
+            new Namespace<>()
+        );
+    }
+
     private void checkReturns() {
         this.program.accept(
                 new RecursivePostorderVisitor<>(new ReturnAnalysis()),
                 new ReturnAnalysis.ReturnState()
         );
-    }
-
-    private void checkCalls() {
-        this.program.accept(new CallAnalysis(namespace), new Namespace<>());
     }
 
     private void checkMainFunction() {

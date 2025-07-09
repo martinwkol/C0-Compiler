@@ -38,4 +38,13 @@ public class Namespace<T> {
     public @Nullable T get(String name) {
         return this.content.get(name);
     }
+
+    public boolean contains(NameTree name) {
+        return this.content.containsKey(name.name().asString());
+    }
+
+    public boolean contains(String name) {
+        return this.content.containsKey(name);
+    }
+
 }
