@@ -352,18 +352,11 @@ public class Parser {
             case Identifier ident -> {
                 this.tokenSource.consume();
                 IdentExpressionTree identExpr = new IdentExpressionTree(name(ident));
-                if (!this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) yield identExpr;
-                
-                this.tokenSource.consume();
-                List<ExpressionTree> parameters = new ArrayList<>();
-                boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
-                while (moreParameters) {
-                    parameters.add(parseExpression());
-                    if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
-                    else moreParameters = false;
+                if (this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) {
+                    yield parseCall(identExpr);
+                } else {
+                    yield identExpr;
                 }
-                Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
-                yield new CallTree(identExpr, parameters, closingBracket.span().end());
             }
             case NumberLiteral(String value, int base, Span span) -> {
                 this.tokenSource.consume();
@@ -376,6 +369,19 @@ public class Parser {
             }
             case Token t -> throw new ParseException("invalid factor " + t);
         };
+    }
+
+    private ExpressionTree parseCall(IdentExpressionTree name) {
+        this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
+        List<ExpressionTree> parameters = new ArrayList<>();
+        boolean moreParameters = !this.tokenSource.peek().isSeparator(SeparatorType.PAREN_CLOSE);
+        while (moreParameters) {
+            parameters.add(parseExpression());
+            if (this.tokenSource.peek().isSeparator(SeparatorType.COMMA)) this.tokenSource.consume();
+            else moreParameters = false;
+        }
+        Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
+        return new CallTree(name, parameters, closingBracket.span().end());
     }
 
     private static NameTree name(Identifier ident) {
