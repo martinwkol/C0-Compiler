@@ -30,5 +30,9 @@ public sealed interface Token permits ErrorToken, Identifier, Keyword, NumberLit
         return false;
     }
 
+    default boolean isIdentifier() {
+        return false;
+    }
+
     String asString();
 }

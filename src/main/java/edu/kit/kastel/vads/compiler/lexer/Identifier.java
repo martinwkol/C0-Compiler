@@ -7,4 +7,9 @@ public record Identifier(String value, Span span) implements Token {
     public String asString() {
         return value();
     }
+
+    @Override
+    public boolean isIdentifier() {
+        return true;
+    }
 }
