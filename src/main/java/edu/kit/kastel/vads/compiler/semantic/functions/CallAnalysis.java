@@ -19,6 +19,15 @@ class CallAnalysis implements NoOpVisitor<Namespace<Void>> {
         if (!functionTypeNamespace.contains(callTree.functionName())) {
             throw new SemanticException("No function named " + callTree.functionName().name());
         }
+        FunctionType functionType = functionTypeNamespace.get(callTree.functionName());
+        if (callTree.parameters().size() != functionType.parameterTypes().size()) {
+            throw new SemanticException(String.format(
+                "Function %s expectes %d arguments but got %d", 
+                callTree.functionName().name(),
+                functionType.parameterTypes().size(),
+                callTree.parameters().size()
+            ));
+        }
         return NoOpVisitor.super.visit(callTree, data);
     }
 }
