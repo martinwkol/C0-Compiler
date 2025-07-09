@@ -41,9 +41,11 @@ class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
         }
     }
 
+    private final NameTree functionName;
     private final Namespace<FunctionType> functionTypeNamespace;
 
-    public TypeAnalysis(Namespace<FunctionType> functionTypeNamespace) {
+    public TypeAnalysis(NameTree functionName, Namespace<FunctionType> functionTypeNamespace) {
+        this.functionName = functionName;
         this.functionTypeNamespace = functionTypeNamespace;
     }
 
@@ -208,9 +210,11 @@ class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
 
     @Override
     public Unit visit(ReturnTree returnTree, TypeMapping data) {
-        Type returnType = data.get(returnTree.expression());
-        if (returnType != BasicType.INT && returnType != BasicType.BOOL) {
-            throw new SemanticException(data.get(returnTree.expression()) + " is an invalid return type");
+        FunctionType functionType = functionTypeNamespace.get(functionName);
+        Type expectedReturnType = functionType.returnType();
+        Type returnedType = data.get(returnTree.expression());
+        if (expectedReturnType != returnedType) {
+            throw new SemanticException("Expected return type " + expectedReturnType + " but got " + returnedType);
         }
         return NoOpVisitor.super.visit(returnTree, data);
     }

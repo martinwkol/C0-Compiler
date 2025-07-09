@@ -1,5 +1,6 @@
 package edu.kit.kastel.vads.compiler.semantic.general;
 
+import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.type.FunctionType;
 import edu.kit.kastel.vads.compiler.parser.visitor.RecursivePostorderVisitor;
@@ -7,30 +8,32 @@ import edu.kit.kastel.vads.compiler.semantic.util.Namespace;
 import edu.kit.kastel.vads.compiler.semantic.util.VariableStatus;
 
 public class GeneralAnalysis {
-    private final ProgramTree program;
+    private final FunctionTree function;
     private final Namespace<FunctionType> functionNamespace;
 
     public static void analyze(ProgramTree program, Namespace<FunctionType> functionNamespace) {
-        GeneralAnalysis ga = new GeneralAnalysis(program, functionNamespace);
-        ga.checkIntegerLiteralRange();
-        ga.checkVariableStatus();
-        ga.checkTypes();
+        for (FunctionTree function : program.topLevelTrees()) {
+            GeneralAnalysis ga = new GeneralAnalysis(function, functionNamespace);
+            ga.checkIntegerLiteralRange();
+            ga.checkVariableStatus();
+            ga.checkTypes();
+        }
     }
 
-    private GeneralAnalysis(ProgramTree program, Namespace<FunctionType> functionNamespace) {
-        this.program = program;
+    private GeneralAnalysis(FunctionTree function, Namespace<FunctionType> functionNamespace) {
+        this.function = function;
         this.functionNamespace = functionNamespace;
     }
 
     private void checkIntegerLiteralRange() {
-        this.program.accept(
+        this.function.accept(
                 new RecursivePostorderVisitor<>(new IntegerLiteralRangeAnalysis()),
                 new Namespace<>()
         );
     }
     
     private void checkVariableStatus() {
-        this.program.accept(
+        this.function.accept(
                 new VariableStatusAnalysisVisitor(), 
                 new VariableStatus()
         );
@@ -38,8 +41,8 @@ public class GeneralAnalysis {
 
 
     private void checkTypes() {
-        this.program.accept(
-                new RecursivePostorderVisitor<>(new TypeAnalysis(functionNamespace)),
+        this.function.accept(
+                new RecursivePostorderVisitor<>(new TypeAnalysis(function.name(), functionNamespace)),
                 new TypeAnalysis.TypeMapping()
         );
     }
