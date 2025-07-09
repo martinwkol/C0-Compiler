@@ -49,7 +49,7 @@ class TypeAnalysis implements NoOpVisitor<TypeAnalysis.TypeMapping> {
 
     @Override
     public Unit visit(CallTree callTree, TypeMapping data) {
-        FunctionType functionType = functionTypeNamespace.get(callTree.functionName().name());
+        FunctionType functionType = functionTypeNamespace.get(callTree.functionName());
         for (int i = 0; i < callTree.parameters().size(); i++) {
             if (!data.get(callTree.parameters().get(i)).equals(functionType.parameterTypes().get(i))) {
                 throw new SemanticException(String.format("expected type '%s' but got expression of type %s", 

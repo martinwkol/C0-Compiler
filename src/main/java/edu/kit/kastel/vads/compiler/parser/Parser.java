@@ -17,8 +17,6 @@ import edu.kit.kastel.vads.compiler.parser.type.BasicType;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 public class Parser {
     private final TokenSource tokenSource;
 
@@ -168,11 +166,7 @@ public class Parser {
             else moreParameters = false;
         }
         Separator closingBracket = this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
-        return new CallTree(
-            new IdentExpressionTree(name), 
-            parameters, 
-            closingBracket.span().end()
-        );
+        return new CallTree(name, parameters,closingBracket.span().end());
     }
 
     private Operator parseAssignmentOperator() {

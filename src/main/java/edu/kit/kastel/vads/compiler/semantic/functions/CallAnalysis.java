@@ -16,7 +16,7 @@ class CallAnalysis implements NoOpVisitor<Namespace<Void>> {
 
     @Override
     public Unit visit(CallTree callTree, Namespace<Void> data) {
-        if (functionTypeNamespace.get(callTree.functionName().name()) == null) {
+        if (functionTypeNamespace.get(callTree.functionName()) == null) {
             throw new SemanticException("No function named " + callTree.functionName().name());
         }
         return NoOpVisitor.super.visit(callTree, data);

@@ -172,7 +172,7 @@ public class SsaTranslation {
             for (ExpressionTree parameter : callTree.parameters()) {
                 parameters.add(parameter.accept(this, data).orElseThrow());
             }
-            String functionName = callTree.functionName().name().name().asString();
+            String functionName = callTree.functionName().name().asString();
             Node ret = projResultCall(data, data.constructor.newCall(functionName, parameters));
             popSpan();
             return Optional.of(ret);
