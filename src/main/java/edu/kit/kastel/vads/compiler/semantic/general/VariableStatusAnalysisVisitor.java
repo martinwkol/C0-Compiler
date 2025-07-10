@@ -42,6 +42,10 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
         VariableStatus cloned = VariableStatus.clonedFrom(data);
         for (StatementTree statement : blockTree.statements()) {
             cloned = statement.accept(this, cloned);
+            // Ignore unreachable code
+            if (statement instanceof ReturnTree) break;
+            if (statement instanceof BreakTree) break;
+            if (statement instanceof ContinueTree) break;
         }
         cloned.declared = data.declared;
         cloned.initialized.retainAll(data.declared);
