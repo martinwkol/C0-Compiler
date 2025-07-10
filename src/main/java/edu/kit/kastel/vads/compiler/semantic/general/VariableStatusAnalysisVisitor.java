@@ -47,9 +47,9 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
             if (statement instanceof BreakTree) break;
             if (statement instanceof ContinueTree) break;
         }
-        cloned.declared = data.declared;
-        cloned.initialized.retainAll(data.declared);
-        return cloned;
+        data.initialized = cloned.initialized;
+        data.initialized.retainAll(data.declared);
+        return data;
     }
 
     @Override
@@ -96,11 +96,11 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
         }
         VariableStatus clonedTrue = ifTree.caseTrue().accept(this, VariableStatus.clonedFrom(data));
         VariableStatus clonedFalse = ifTree.caseFalse().accept(this, VariableStatus.clonedFrom(data));
-        clonedTrue.declared = data.declared;
-        clonedTrue.initialized.retainAll(data.declared);
         // variables only initialized, if initialized in both blocks
-        clonedTrue.initialized.retainAll(clonedFalse.initialized);
-        return clonedTrue;
+        data.initialized = clonedTrue.initialized;
+        data.initialized.retainAll(clonedFalse.initialized);
+        data.initialized.retainAll(data.declared);
+        return data;
     }
 
     @Override
@@ -121,9 +121,9 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
         if (forTree.step() != null) {
             forTree.step().accept(this, clonedBody);
         }
-        clonedHeader.declared = data.declared;
-        clonedHeader.initialized.retainAll(data.declared);
-        return clonedHeader;
+        data.initialized = clonedHeader.initialized;
+        data.initialized.retainAll(data.declared);
+        return data;
     }
 
     @Override
