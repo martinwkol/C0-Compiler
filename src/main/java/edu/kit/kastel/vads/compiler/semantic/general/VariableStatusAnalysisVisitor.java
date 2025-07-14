@@ -1,5 +1,8 @@
 package edu.kit.kastel.vads.compiler.semantic.general;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.parser.ast.*;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
@@ -12,6 +15,25 @@ import edu.kit.kastel.vads.compiler.semantic.util.VariableStatus;
 /// - not initialized twice
 /// - assigned before referenced
 class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableStatus> {
+    // Quick and dirty
+    private static class IgnoreInitMark {
+        private static int next = 0;
+        private final int mark;
+
+        public static IgnoreInitMark newMark() {
+            return new IgnoreInitMark(next++);
+        }
+
+        private IgnoreInitMark(int mark) {
+            this.mark = mark;
+        }
+
+        public int get() {
+            return mark;
+        }
+    };
+
+    private Deque<IgnoreInitMark> ignoreInitializationStack = new ArrayDeque<>();
 
     @Override
     public VariableStatus visit(AssignmentTree assignmentTree, VariableStatus data) {
@@ -24,7 +46,7 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
                 } else {
                     checkInitialized(name, data);
                 }
-                data.initialized.add(name.name());
+                if (!ignoreInitialization()) data.initialized.add(name.name());
             }
         }
         return data;
@@ -40,13 +62,17 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     @Override
     public VariableStatus visit(BlockTree blockTree, VariableStatus data) {
         VariableStatus cloned = VariableStatus.clonedFrom(data);
+        IgnoreInitMark blockMark = IgnoreInitMark.newMark();
         for (StatementTree statement : blockTree.statements()) {
             cloned = statement.accept(this, cloned);
             // Ignore unreachable code
-            if (statement instanceof ReturnTree) break;
-            if (statement instanceof BreakTree) break;
-            if (statement instanceof ContinueTree) break;
+            if (
+                statement instanceof ReturnTree ||
+                statement instanceof BreakTree ||
+                statement instanceof ContinueTree
+            ) pushIgnoreInit(blockMark);
         }
+        popIgnoreInit(blockMark);
         data.initialized = cloned.initialized;
         data.initialized.retainAll(data.declared);
         return data;
@@ -57,7 +83,7 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
         checkUndeclared(declarationTree.name(), data);
         if (declarationTree.initializer() != null) {
             data = declarationTree.initializer().accept(this, data);
-            data.initialized.add(declarationTree.name().name());
+            if (!ignoreInitialization()) data.initialized.add(declarationTree.name().name());
         }
         data.declared.add(declarationTree.name().name());
         return data;
@@ -188,7 +214,7 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     public VariableStatus visit(ParameterTree parameterTree, VariableStatus data) {
         checkUndeclared(parameterTree.name(), data);
         data.declared.add(parameterTree.name().name());
-        data.initialized.add(parameterTree.name().name());
+        if (!ignoreInitialization()) data.initialized.add(parameterTree.name().name());
         return data;
     }
 
@@ -197,19 +223,36 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
         return data;
     }
 
-    private static void checkDeclared(NameTree name, VariableStatus data) {
+    private boolean ignoreInitialization() {
+        return !ignoreInitializationStack.isEmpty();
+    }
+
+    private void pushIgnoreInit(IgnoreInitMark mark) {
+        ignoreInitializationStack.push(mark);
+    }
+
+    private void popIgnoreInit(IgnoreInitMark mark) {
+        boolean markFound = false;
+        while (true) {
+            IgnoreInitMark popedMark = ignoreInitializationStack.pop();
+            if (popedMark.get() == mark.get()) markFound = true;
+            else if (markFound && popedMark.get() != mark.get()) return;
+        }
+    }
+
+    private void checkDeclared(NameTree name, VariableStatus data) {
         if (!data.declared.contains(name.name())) {
             throw new SemanticException("Variable " + name + " must be declared before assignment");
         }
     }
 
-    private static void checkInitialized(NameTree name, VariableStatus data) {
-        if (!data.initialized.contains(name.name())) {
+    private void checkInitialized(NameTree name, VariableStatus data) {
+        if (!ignoreInitialization() && !data.initialized.contains(name.name())) {
             throw new SemanticException("Variable " + name + " must be initialized before use");
         }
     }
 
-    private static void checkUndeclared(NameTree name, VariableStatus data) {
+    private void checkUndeclared(NameTree name, VariableStatus data) {
         if (data.declared.contains(name.name())) {
             throw new SemanticException("Variable " + name + " is already declared");
         }
