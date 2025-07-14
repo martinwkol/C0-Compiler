@@ -16,24 +16,7 @@ import edu.kit.kastel.vads.compiler.semantic.util.VariableStatus;
 /// - assigned before referenced
 class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableStatus> {
     // Quick and dirty
-    private static class IgnoreInitMark {
-        private static int next = 0;
-        private final int mark;
-
-        public static IgnoreInitMark newMark() {
-            return new IgnoreInitMark(next++);
-        }
-
-        private IgnoreInitMark(int mark) {
-            this.mark = mark;
-        }
-
-        public int get() {
-            return mark;
-        }
-    };
-
-    private Deque<IgnoreInitMark> ignoreInitializationStack = new ArrayDeque<>();
+    private int ignoreInitDepth = 0;
 
     @Override
     public VariableStatus visit(AssignmentTree assignmentTree, VariableStatus data) {
@@ -62,7 +45,7 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     @Override
     public VariableStatus visit(BlockTree blockTree, VariableStatus data) {
         VariableStatus cloned = VariableStatus.clonedFrom(data);
-        IgnoreInitMark blockMark = IgnoreInitMark.newMark();
+        int ignores2pop = 0;
         for (StatementTree statement : blockTree.statements()) {
             cloned = statement.accept(this, cloned);
             // Ignore unreachable code
@@ -70,9 +53,12 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
                 statement instanceof ReturnTree ||
                 statement instanceof BreakTree ||
                 statement instanceof ContinueTree
-            ) pushIgnoreInit(blockMark);
+            )  {
+                pushIgnoreInit();
+                ignores2pop++;
+            }
         }
-        popIgnoreInit(blockMark);
+        for (; ignores2pop > 0; ignores2pop--) popIgnoreInit();
         data.initialized = cloned.initialized;
         data.initialized.retainAll(data.declared);
         return data;
@@ -224,21 +210,18 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     }
 
     private boolean ignoreInitialization() {
-        return !ignoreInitializationStack.isEmpty();
+        return ignoreInitDepth > 0;
     }
 
-    private void pushIgnoreInit(IgnoreInitMark mark) {
-        ignoreInitializationStack.push(mark);
+    private void pushIgnoreInit() {
+        ignoreInitDepth++;
     }
 
-    private void popIgnoreInit(IgnoreInitMark mark) {
-        boolean markFound = false;
-        while (true) {
-            IgnoreInitMark nextMark = ignoreInitializationStack.peek();
-            if (nextMark.get() == mark.get()) markFound = true;
-            else if (markFound && nextMark.get() != mark.get()) return;
-            ignoreInitializationStack.pop();
+    private void popIgnoreInit() {
+        if (ignoreInitDepth <= 0) {
+            throw new IllegalStateException("Attempted to pop ignore init but no ignore init is active");
         }
+        ignoreInitDepth--;
     }
 
     private void checkDeclared(NameTree name, VariableStatus data) {
