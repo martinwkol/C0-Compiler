@@ -234,9 +234,10 @@ class VariableStatusAnalysisVisitor implements Visitor<VariableStatus, VariableS
     private void popIgnoreInit(IgnoreInitMark mark) {
         boolean markFound = false;
         while (true) {
-            IgnoreInitMark popedMark = ignoreInitializationStack.pop();
-            if (popedMark.get() == mark.get()) markFound = true;
-            else if (markFound && popedMark.get() != mark.get()) return;
+            IgnoreInitMark nextMark = ignoreInitializationStack.peek();
+            if (nextMark.get() == mark.get()) markFound = true;
+            else if (markFound && nextMark.get() != mark.get()) return;
+            ignoreInitializationStack.pop();
         }
     }
 
