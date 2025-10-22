@@ -32,7 +32,7 @@ public final class Phi extends Node {
     public Node simplified() {
         assert this.simplified != null;
         while (this.simplified instanceof Phi phi && phi.hasSimplifiedVersion()) {
-            this.simplified = phi;
+            this.simplified = phi.simplified();
         }
         return this.simplified;
     }
