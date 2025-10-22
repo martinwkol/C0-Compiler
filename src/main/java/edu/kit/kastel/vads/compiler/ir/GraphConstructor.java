@@ -178,7 +178,11 @@ class GraphConstructor {
     }
 
     Node readVariable(Name variable, Block block) {
-        return readVariable(variable, block, currentBlock());
+        Node node = readVariable(variable, block, currentBlock());
+        if (node instanceof Phi phi && phi.hasSimplifiedVersion()) {
+            node = phi.simplified();
+        }
+        return node;
     }
 
     private Node readVariable(Name variable, Block block, Block origin) {
@@ -213,6 +217,8 @@ class GraphConstructor {
     }
 
     Node tryRemoveTrivialPhi(Phi phi) {
+        if (phi.hasSimplifiedVersion()) return phi.simplified();
+
         Node same = null;
         for (Node operand : phi.operands()) {
             if (operand.equals(same) || operand.equals(phi)) continue;
@@ -223,6 +229,8 @@ class GraphConstructor {
             // Phi unreachable or in start block -> use dummy node
             return new InvalidNode(phi.block());
         }
+        phi.setSimplifiedVersion(same);
+
         Set<Node> users = this.graph.successors(phi);
         for (Node user : users) {
             if (user == phi) continue;
