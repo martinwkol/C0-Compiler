@@ -233,17 +233,19 @@ public class SsaTranslation {
             pushSpan(whileTree);
 
             Block beforeWhile = data.constructor.currentBlock();
-            Block whileHeader = data.constructor.newBlock();
+            Block whileHeaderEntry = data.constructor.newBlock();
             Block bodyEntry = data.constructor.newBlock();
             Block loopExit = data.constructor.newBlock();
 
             // cannot seal while header yet
-            data.constructor.setJumpExitNode(beforeWhile, whileHeader);
+            data.constructor.setJumpExitNode(beforeWhile, whileHeaderEntry);
 
-            loopStack.push(new LoopInfo(whileHeader, loopExit));
-            data.constructor.setCurrentBlock(whileHeader);
+            loopStack.push(new LoopInfo(whileHeaderEntry, loopExit));
+            data.constructor.setCurrentBlock(whileHeaderEntry);
             Node condition = whileTree.condition().accept(this, data).orElseThrow();
-            data.constructor.setIfExitNode(whileHeader, condition, bodyEntry, loopExit);
+
+            Block whileHeaderExit = data.currentBlock();
+            data.constructor.setIfExitNode(whileHeaderExit, condition, bodyEntry, loopExit);
             data.constructor.sealBlock(bodyEntry);
 
             data.constructor.setCurrentBlock(bodyEntry);
@@ -251,11 +253,11 @@ public class SsaTranslation {
             Block bodyExit = data.constructor.currentBlock();
             // might already be set if block ends with break or continue
             if (bodyExit.exitNode() == null) {
-                data.constructor.setJumpExitNode(bodyExit, whileHeader);
+                data.constructor.setJumpExitNode(bodyExit, whileHeaderEntry);
             }
             loopStack.pop();
 
-            data.constructor.sealBlock(whileHeader);
+            data.constructor.sealBlock(whileHeaderEntry);
             data.constructor.sealBlock(loopExit);
             data.constructor.setCurrentBlock(loopExit);
 
