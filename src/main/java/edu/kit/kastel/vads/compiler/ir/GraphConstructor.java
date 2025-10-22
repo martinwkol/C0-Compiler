@@ -228,7 +228,7 @@ class GraphConstructor {
             if (user == phi) continue;
             user.replacePredecessor(phi, same);
         }
-        
+
         for (Node user : users) {
             if (user instanceof Phi && user != phi) {
                 tryRemoveTrivialPhi((Phi) user);

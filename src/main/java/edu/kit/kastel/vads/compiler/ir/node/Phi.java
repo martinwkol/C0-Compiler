@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 public final class Phi extends Node {
+    // != null if phi is trivial
     @Nullable
     private Node simplified = null;
 
